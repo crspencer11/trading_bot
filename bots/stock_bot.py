@@ -15,8 +15,9 @@ class StockBot:
     df = None
     audit_trail = []
 
-    def __init__(self, ticker: str):
+    def __init__(self, ticker: str, company: str):
         self.ticker = ticker
+        self.company = company
 
     def load_dataframe(self):
         self.self.df = pd.DataFrame.from_dict()
