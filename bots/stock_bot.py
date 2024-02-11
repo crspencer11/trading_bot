@@ -92,7 +92,7 @@ class StockBot:
             'learning_rate': [0.1, 0.01, 0.001]
         }
         # Create a GradientBoostingRegressor
-        pipeline = make_pipeline(PCA(n_components=10), GradientBoostingRegressor())
+        pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
 
         # Perform grid search with cross-validation
         grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error')
