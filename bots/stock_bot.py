@@ -3,6 +3,7 @@ import numpy as np
 import json
 import requests
 import config
+from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
@@ -18,13 +19,31 @@ class StockBot:
     def __init__(self, ticker: str, company: str):
         self.ticker = ticker
         self.company = company
+        self.model = RandomForestClassifier()
+        self.features = ['Open', 'High', 'Low', 'Close', 'Volume', 'RSI', 'MACD']
+        self.target = 'target'
 
     def load_dataframe(self):
-        self.self.df = pd.DataFrame.from_dict()
-        self.audit_trail.append(
-            f"initialized df: {self.df.head()}"
-        )
+        """Load into data"""
+        if self.df is None:
+            self.df = pd.DataFrame.from_dict()
+            self.audit_trail.append(
+                f"Initialized dataframe:{self.df.head()}"
+            )
         return self.df
+    
+    def preprocess_data(self, data):
+        """Perform PCA for dimensionality reduction of redundant features"""
+        principle_components = PCA(n_components=10)
+        reduced_data = principle_components.fit_transform(data)
+        return reduced_data
+    
+    def perform_action(self, data_path):
+        if self.df is None:
+            data = self.load_data(data_path)
+            processed_data = self.preprocess_data(data)
+            self.df = pd.DataFrame(processed_data, columns=[f'feature_{i}' for i in range(processed_data.shape[1])])
+        self.model.partial_fit(self.df[self.features], self.df[self.target])
     
     def moving_average_convergance_divergance(self):
         """MACD indicator creation"""
