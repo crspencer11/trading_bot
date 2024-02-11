@@ -3,6 +3,7 @@ import numpy as np
 import json
 import requests
 import config
+
 from sklearn.decomposition import PCA
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -76,12 +77,21 @@ class StockBot:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         return X_train, X_test, y_train, y_test
 
+
+
     @staticmethod
     def preprocess_data(X_train, X_test) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Perform PCA for dimensionality reduction of redundant features"""
+        scaler = StandardScaler()
+        X_train_standardized = scaler.fit_transform(X_train)
+        X_test_standardized = scaler.transform(X_test)
+        return X_train_standardized, X_test_standardized
+    
+    @staticmethod
+    def perform_pca(X_train_standardized, X_test_standardized):
         principle_components = PCA(n_components=10)
-        X_train_pca = principle_components.fit_transform(X_train)
-        X_test_pca = principle_components.transform(X_test)
+        X_train_pca = principle_components.fit_transform(X_train_standardized)
+        X_test_pca = principle_components.transform(X_test_standardized)
         return X_train_pca, X_test_pca
     
     @staticmethod
