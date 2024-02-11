@@ -21,6 +21,7 @@ class StockBot:
         self.ticker = ticker
         self.company = company
         self.features = ['open', 'high', 'low', 'volume', 'RSI', 'MACD']
+        self.trained_model = None
 
     def load_and_split_data(self) -> pd.DataFrame:
         """Load into data"""
@@ -77,8 +78,6 @@ class StockBot:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         return X_train, X_test, y_train, y_test
 
-
-
     @staticmethod
     def preprocess_data(X_train, X_test) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Perform PCA for dimensionality reduction of redundant features"""
@@ -87,6 +86,21 @@ class StockBot:
         X_test_standardized = scaler.transform(X_test)
         return X_train_standardized, X_test_standardized
     
+    def train_model(self, X_train, y_train):
+        # Create a pipeline with preprocessing and the model
+        pipeline = make_pipeline(
+            StandardScaler(),
+            PCA(n_components=10),  # Adjust as needed
+            GradientBoostingRegressor()
+        )
+
+        # Train the machine learning model using the provided training data
+        pipeline.fit(X_train, y_train)
+
+        # Store the trained model as an attribute
+        self.trained_model = pipeline
+
+    
     @staticmethod
     def perform_pca(X_train_standardized, X_test_standardized):
         principle_components = PCA(n_components=10)
@@ -94,8 +108,7 @@ class StockBot:
         X_test_pca = principle_components.transform(X_test_standardized)
         return X_train_pca, X_test_pca
     
-    @staticmethod
-    def find_best_regressor(X_train_pca, X_test_pca, y_train, y_test):
+    def find_best_regressor(self, X_train_pca, X_test_pca, y_train, y_test):
         param_grid = {
             'max_depth': [2, 3, 4],
             'n_estimators': [50, 100, 150],
@@ -105,7 +118,7 @@ class StockBot:
         pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
 
         # Perform grid search with cross-validation
-        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error')
+        self.trained_model = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error')
         grid_search.fit(X_train_pca, y_train)
 
         # Get the best estimator from the grid search
@@ -128,3 +141,7 @@ class StockBot:
         print("Feature Importances:")
         for feature, importance in zip(X_train_pca.columns, feature_importance):
             print(f"{feature}: {importance:.4f}")
+
+
+    def launch_bot(self):
+
