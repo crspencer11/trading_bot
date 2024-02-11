@@ -4,11 +4,11 @@ import json
 import requests
 import config
 from sklearn.decomposition import PCA
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 class StockBot:
     api_key = config.api_key
@@ -19,39 +19,24 @@ class StockBot:
     def __init__(self, ticker: str, company: str):
         self.ticker = ticker
         self.company = company
-        self.model = RandomForestClassifier()
-        self.features = ['Open', 'High', 'Low', 'Close', 'Volume', 'RSI', 'MACD']
-        self.target = 'target'
+        self.features = ['open', 'high', 'low', 'volume', 'RSI', 'MACD']
 
-    def load_dataframe(self):
+    def load_and_split_data(self):
         """Load into data"""
         if self.df is None:
+            # API call HERE!!!!!
             self.df = pd.DataFrame.from_dict()
             self.audit_trail.append(
                 f"Initialized dataframe:{self.df.head()}"
             )
         return self.df
     
-    def preprocess_data(self, data):
-        """Perform PCA for dimensionality reduction of redundant features"""
-        principle_components = PCA(n_components=10)
-        reduced_data = principle_components.fit_transform(data)
-        return reduced_data
-    
-    def perform_action(self, data_path):
-        if self.df is None:
-            data = self.load_data(data_path)
-            processed_data = self.preprocess_data(data)
-            self.df = pd.DataFrame(processed_data, columns=[f'feature_{i}' for i in range(processed_data.shape[1])])
-        self.model.partial_fit(self.df[self.features], self.df[self.target])
-    
     def moving_average_convergance_divergance(self):
         """MACD indicator creation"""
-
         self.df['ShortEMA'] = self.df['Close'].ewm(span=12, adjust=False).mean()
         self.df['LongEMA'] = self.df['Close'].ewm(span=26, adjust=False).mean()
         self.df['MACD'] = self.df['ShortEMA'] - self.df['LongEMA']
-        self.df['Signal Line'] = self.df['MACD'].ewm(span=9, adjust=False).mean()
+        self.df['Signal'] = self.df['MACD'].ewm(span=9, adjust=False).mean()
         self.audit_trail.append(
             f"MACD altered df: {self.df.head()}"
         )
@@ -79,26 +64,56 @@ class StockBot:
             f"RSI altered df: {self.df.head()}"
         )
         return self.df
+    
+    def split_data(self):
+        # create 20 day window for std of closing price and use as y(prediction) value
+        rolling_std = self.df['close'].pct_change().rolling(window=20).std()
+        self.df['target'] = (rolling_std.shift(-1) > rolling_std).astype(int)
 
-    def train_model(self):
-        # Create features and labels
-        X = self.df[['Open', 'High', 'Low', 'Close', 'Volume', 'RSI', 'MACD']]
-        y = self.df['Target']  # Assuming 'Target' is already defined as in your previous code
-
-        # Split the dataset into training and testing sets
+        # split data in prep for ML feed
+        X = self.df[self.features]
+        y = self.df['target']
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        return X_train, X_test, y_train, y_test
 
-        # Feature Scaling
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
+    
+    def preprocess_data(self, X_train, X_test):
+        """Perform PCA for dimensionality reduction of redundant features"""
+        principle_components = PCA(n_components=10)
+        X_train_pca = principle_components.fit_transform(X_train)
+        X_test_pca = principle_components.transform(X_test)
+        return X_train_pca, X_test_pca
+    
+    def find_best_regressor(self, X_train_pca, X_test_pca, y_train, y_test):
+        param_grid = {
+            'max_depth': [2, 3, 4],
+            'n_estimators': [50, 100, 150],
+            'learning_rate': [0.1, 0.01, 0.001]
+        }
+        # Create a GradientBoostingRegressor
+        pipeline = make_pipeline(PCA(n_components=10), GradientBoostingRegressor())
 
-        # Train the Model
-        model = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=100, random_state=42))
+        # Perform grid search with cross-validation
+        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error')
+        grid_search.fit(X_train_pca, y_train)
 
-        model.fit(X_train_scaled, y_train)
+        # Get the best estimator from the grid search
+        best_regressor = grid_search.best_estimator_
 
-        # Evaluate the Model
-        predictions = model.predict(X_test_scaled)
-        accuracy = accuracy_score(y_test, predictions)
-        print(f"Model Accuracy: {accuracy}")
+        # Predict using the best model
+        y_predictions = best_regressor.predict(X_test_pca)
+
+        # Evaluate the performance
+        mae = mean_absolute_error(y_test, y_predictions)
+        print(f'Mean Absolute Error: {mae}')
+
+        mse = mean_squared_error(y_test, y_predictions)
+        print(f'Mean Squared Error: {mse}')
+
+        # Print the best hyperparameters
+        print('Best Hyperparameters:', grid_search.best_params_)
+
+        feature_importance = best_regressor.feature_importances_
+        print("Feature Importances:")
+        for feature, importance in zip(X_train_pca.columns, feature_importance):
+            print(f"{feature}: {importance:.4f}")
