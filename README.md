@@ -5,3 +5,7 @@ pip install --user pipenv
 pipenv shell
 pipenv install
 ~~~
+
+## Trade stocks and crypto🌟
+- Using the StockBot module, you can create different ML models for a variety of securities. You can then use these to deploy and put what they learn to work!
+<video src='code.mov' width=180/>
