@@ -4,11 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
-numpy = "*"
-requests = "*"
-config = "*"
-scikit-learn = "*"
+pandas = {version = "==2.2.0"}
+numpy = {version = "==1.26.4"}
+requests = {version = "==2.31.0"}
+config = {version = "==0.5.1"}
+scikit-learn = {version = "==1.4.0"}
 
 [dev-packages]
 
