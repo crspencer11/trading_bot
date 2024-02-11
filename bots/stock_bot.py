@@ -21,7 +21,7 @@ class StockBot:
         self.company = company
         self.features = ['open', 'high', 'low', 'volume', 'RSI', 'MACD']
 
-    def load_and_split_data(self):
+    def load_and_split_data(self) -> pd.DataFrame:
         """Load into data"""
         if self.df is None:
             # API call HERE!!!!!
@@ -31,7 +31,7 @@ class StockBot:
             )
         return self.df
     
-    def moving_average_convergance_divergance(self):
+    def moving_average_convergance_divergance(self) -> pd.DataFrame:
         """MACD indicator creation"""
         self.df['ShortEMA'] = self.df['Close'].ewm(span=12, adjust=False).mean()
         self.df['LongEMA'] = self.df['Close'].ewm(span=26, adjust=False).mean()
@@ -42,7 +42,7 @@ class StockBot:
         )
         return self.df
     
-    def relative_strength_index(self):
+    def relative_strength_index(self) -> pd.DataFrame:
         """RSI indicator creation"""
         delta = self.df['Close'].diff(1)
 
@@ -65,7 +65,7 @@ class StockBot:
         )
         return self.df
     
-    def split_data(self):
+    def split_data(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         # create 20 day window for std of closing price and use as y(prediction) value
         rolling_std = self.df['close'].pct_change().rolling(window=20).std()
         self.df['target'] = (rolling_std.shift(-1) > rolling_std).astype(int)
@@ -76,15 +76,16 @@ class StockBot:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         return X_train, X_test, y_train, y_test
 
-    
-    def preprocess_data(self, X_train, X_test):
+    @staticmethod
+    def preprocess_data(X_train, X_test) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Perform PCA for dimensionality reduction of redundant features"""
         principle_components = PCA(n_components=10)
         X_train_pca = principle_components.fit_transform(X_train)
         X_test_pca = principle_components.transform(X_test)
         return X_train_pca, X_test_pca
     
-    def find_best_regressor(self, X_train_pca, X_test_pca, y_train, y_test):
+    @staticmethod
+    def find_best_regressor(X_train_pca, X_test_pca, y_train, y_test):
         param_grid = {
             'max_depth': [2, 3, 4],
             'n_estimators': [50, 100, 150],
