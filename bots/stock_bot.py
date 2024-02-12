@@ -23,7 +23,7 @@ class StockBot:
         self.features = ['open', 'high', 'low', 'volume', 'RSI', 'MACD']
         self.trained_model = None
 
-    def load_and_split_data(self) -> pd.DataFrame:
+    def load_data(self) -> pd.DataFrame:
         """Load into data"""
         if self.df is None:
             # API call HERE!!!!!
@@ -33,20 +33,20 @@ class StockBot:
             )
         return self.df
     
-    def moving_average_convergance_divergance(self) -> pd.DataFrame:
+    def calculate_moving_avgs(self, data) -> pd.DataFrame:
         """MACD indicator creation"""
-        self.df['ShortEMA'] = self.df['Close'].ewm(span=12, adjust=False).mean()
-        self.df['LongEMA'] = self.df['Close'].ewm(span=26, adjust=False).mean()
-        self.df['MACD'] = self.df['ShortEMA'] - self.df['LongEMA']
-        self.df['Signal'] = self.df['MACD'].ewm(span=9, adjust=False).mean()
+        data['ShortEMA'] = data['Close'].ewm(span=12, adjust=False).mean()
+        data['LongEMA'] = data['Close'].ewm(span=26, adjust=False).mean()
+        data['MACD'] = data['ShortEMA'] - data['LongEMA']
+        data['Signal'] = data['MACD'].ewm(span=9, adjust=False).mean()
         self.audit_trail.append(
-            f"MACD altered df: {self.df.head()}"
+            f"MACD altered df: {data.head()}"
         )
-        return self.df
+        return data
     
-    def relative_strength_index(self) -> pd.DataFrame:
+    def relative_strength_index(self, data) -> pd.DataFrame:
         """RSI indicator creation"""
-        delta = self.df['Close'].diff(1)
+        delta = data['Close'].diff(1)
 
         # Define the lookback period (e.g., 14 days)
         lookback = 14
@@ -61,64 +61,65 @@ class StockBot:
 
         # Calculate Relative Strength and RSI
         relative_strength = avg_gains / avg_losses
-        self.df['RSI'] = 100 - (100 / (1 + relative_strength))
+        data['RSI'] = 100 - (100 / (1 + relative_strength))
         self.audit_trail.append(
-            f"RSI altered df: {self.df.head()}"
+            f"RSI altered df: {data.head()}"
         )
-        return self.df
+        return data
     
-    def split_data(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    def split_data(self, data) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         # create 20 day window for std of closing price and use as y(prediction) value
-        rolling_std = self.df['close'].pct_change().rolling(window=20).std()
-        self.df['target'] = (rolling_std.shift(-1) > rolling_std).astype(int)
+        rolling_std = data['close'].pct_change().rolling(window=20).std()
+        data['target'] = (rolling_std.shift(-1) > rolling_std).astype(int)
 
         # split data in prep for ML feed
-        X = self.df[self.features]
-        y = self.df['target']
+        X = data[self.features]
+        y = data['target']
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         return X_train, X_test, y_train, y_test
 
-    @staticmethod
-    def preprocess_data(X_train, X_test) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Perform PCA for dimensionality reduction of redundant features"""
-        scaler = StandardScaler()
-        X_train_standardized = scaler.fit_transform(X_train)
-        X_test_standardized = scaler.transform(X_test)
-        return X_train_standardized, X_test_standardized
+    # @staticmethod
+    # def preprocess_data(X_train, X_test) -> tuple[pd.DataFrame, pd.DataFrame]:
+    #     """Perform PCA for dimensionality reduction of redundant features"""
+    #     scaler = StandardScaler()
+    #     X_train_standardized = scaler.fit_transform(X_train)
+    #     X_test_standardized = scaler.transform(X_test)
+    #     return X_train_standardized, X_test_standardized
     
     def train_model(self, X_train, y_train):
         # Create a pipeline with preprocessing and the model
         pipeline = make_pipeline(
             StandardScaler(),
             PCA(n_components=10),
-            GradientBoostingRegressor()
+            GradientBoostingRegressor(),
+            memory="cachedir"
         )
         pipeline.fit(X_train, y_train)
         self.trained_model = pipeline
 
     
-    @staticmethod
-    def perform_pca(X_train_standardized, X_test_standardized):
-        principle_components = PCA(n_components=10)
-        X_train_pca = principle_components.fit_transform(X_train_standardized)
-        X_test_pca = principle_components.transform(X_test_standardized)
-        return X_train_pca, X_test_pca
+    # @staticmethod
+    # def perform_pca(X_train_standardized, X_test_standardized):
+    #     principle_components = PCA(n_components=10)
+    #     X_train_pca = principle_components.fit_transform(X_train_standardized)
+    #     X_test_pca = principle_components.transform(X_test_standardized)
+    #     return X_train_pca, X_test_pca
     
-    def find_best_regressor(self, X_train_pca, X_test_pca, y_train, y_test):
+    def find_best_regressor(self, X_train, X_test, y_train, y_test):
         param_grid = {
             'max_depth': [2, 3, 4],
             'n_estimators': [50, 100, 150],
             'learning_rate': [0.1, 0.01, 0.001]
         }
-        pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
+        # pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
 
         # Perform grid search with cross-validation
-        self.trained_model = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error')
-        self.trained_model.fit(X_train_pca, y_train)
+        self.trained_model = GridSearchCV(self.trained_model, param_grid, cv=5, scoring='neg_mean_squared_error')
+        self.trained_model.fit(X_train, y_train)
 
         best_regressor = self.trained_model.best_estimator_
 
-        y_predictions = best_regressor.predict(X_test_pca)
+        y_predictions = best_regressor.predict(X_test)
 
         # Evaluate the performance
         mae = mean_absolute_error(y_test, y_predictions)
@@ -131,9 +132,14 @@ class StockBot:
 
         feature_importance = best_regressor.feature_importances_
         print("Feature Importances:")
-        for feature, importance in zip(X_train_pca.columns, feature_importance):
+        for feature, importance in zip(X_train.columns, feature_importance):
             print(f"{feature}: {importance:.4f}")
-
+            
 
     def launch_bot(self):
-
+        stock_data = self.load_data()
+        df = self.calculate_moving_avgs(stock_data)
+        final_df = self.relative_strength_index(df)
+        X_train, X_test, y_train, y_test = self.split_data(final_df)
+        self.train_model(X_train, y_train)
+        self.find_best_regressor(X_train, X_test, y_train, y_test)
