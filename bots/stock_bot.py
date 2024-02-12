@@ -114,11 +114,12 @@ class StockBot:
         # pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
 
         # Perform grid search with cross-validation
-        self.trained_model = GridSearchCV(self.trained_model, param_grid, cv=5, scoring='neg_mean_squared_error')
-        self.trained_model.fit(X_train, y_train)
+        searched_model = GridSearchCV(self.trained_model, param_grid, cv=5, scoring='neg_mean_squared_error')
+        searched_model.fit(X_train, y_train)
 
-        best_regressor = self.trained_model.best_estimator_
+        print(f"best hyperparams: {searched_model.best_params_}")
 
+        best_regressor = searched_model.best_estimator_
         y_predictions = best_regressor.predict(X_test)
 
         # Evaluate the performance
@@ -128,11 +129,11 @@ class StockBot:
         mse = mean_squared_error(y_test, y_predictions)
         print(f'Mean Squared Error: {mse}')
 
-        print('Best Hyperparameters:', self.trained_model.best_params_)
+        print('Best Hyperparameters:', searched_model.best_params_)
 
-        feature_importance = best_regressor.feature_importances_
+        feature_importances = best_regressor.feature_importances_
         print("Feature Importances:")
-        for feature, importance in zip(X_train.columns, feature_importance):
+        for feature, importance in zip(X_train.columns, feature_importances):
             print(f"{feature}: {importance:.4f}")
             
 
