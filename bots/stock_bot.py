@@ -104,6 +104,12 @@ class StockBot:
     #     X_train_pca = principle_components.fit_transform(X_train_standardized)
     #     X_test_pca = principle_components.transform(X_test_standardized)
     #     return X_train_pca, X_test_pca
+        
+    @staticmethod
+    def huber_loss(y_actual, y_predicted, delta: float):
+        huber_mse = 0.5*(y_actual - y_predicted)**2
+        huber_mae = delta * (np.abs(y_actual - y_predicted) - 0.5 * delta)
+        return np.where(np.abs(y_actual - y_predicted) <= delta, huber_mse, huber_mae)
     
     def find_best_regressor(self, X_train, X_test, y_train, y_test):
         param_grid = {
@@ -129,6 +135,9 @@ class StockBot:
         mse = mean_squared_error(y_test, y_predictions)
         print(f'Mean Squared Error: {mse}')
 
+        huber_loss = self.huber_loss(y_test, y_predictions, 0.1)
+        print(f"Huber Loss: {huber_loss}")
+
         print('Best Hyperparameters:', searched_model.best_params_)
 
         feature_importances = best_regressor.feature_importances_
@@ -136,7 +145,6 @@ class StockBot:
         for feature, importance in zip(X_train.columns, feature_importances):
             print(f"{feature}: {importance:.4f}")
             
-
     def launch_bot(self):
         stock_data = self.load_data()
         df = self.calculate_moving_avgs(stock_data)
