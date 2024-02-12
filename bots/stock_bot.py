@@ -90,14 +90,10 @@ class StockBot:
         # Create a pipeline with preprocessing and the model
         pipeline = make_pipeline(
             StandardScaler(),
-            PCA(n_components=10),  # Adjust as needed
+            PCA(n_components=10),
             GradientBoostingRegressor()
         )
-
-        # Train the machine learning model using the provided training data
         pipeline.fit(X_train, y_train)
-
-        # Store the trained model as an attribute
         self.trained_model = pipeline
 
     
@@ -114,17 +110,14 @@ class StockBot:
             'n_estimators': [50, 100, 150],
             'learning_rate': [0.1, 0.01, 0.001]
         }
-        # Create a GradientBoostingRegressor
         pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
 
         # Perform grid search with cross-validation
         self.trained_model = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error')
-        grid_search.fit(X_train_pca, y_train)
+        self.trained_model.fit(X_train_pca, y_train)
 
-        # Get the best estimator from the grid search
-        best_regressor = grid_search.best_estimator_
+        best_regressor = self.trained_model.best_estimator_
 
-        # Predict using the best model
         y_predictions = best_regressor.predict(X_test_pca)
 
         # Evaluate the performance
@@ -134,8 +127,7 @@ class StockBot:
         mse = mean_squared_error(y_test, y_predictions)
         print(f'Mean Squared Error: {mse}')
 
-        # Print the best hyperparameters
-        print('Best Hyperparameters:', grid_search.best_params_)
+        print('Best Hyperparameters:', self.trained_model.best_params_)
 
         feature_importance = best_regressor.feature_importances_
         print("Feature Importances:")
