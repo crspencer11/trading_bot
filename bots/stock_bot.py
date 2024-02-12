@@ -39,6 +39,7 @@ class StockBot:
         data['LongEMA'] = data['Close'].ewm(span=26, adjust=False).mean()
         data['MACD'] = data['ShortEMA'] - data['LongEMA']
         data['Signal'] = data['MACD'].ewm(span=9, adjust=False).mean()
+        data['buy_sell_signal'] = np.where(data['Signal'] <= data['MACD'], "buy", "sell")
         self.audit_trail.append(
             f"MACD altered df: {data.head()}"
         )
