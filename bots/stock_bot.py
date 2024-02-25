@@ -22,6 +22,7 @@ class StockBot:
         self.company = company
         self.features = ['open', 'high', 'low', 'volume', 'RSI', 'MACD']
         self.trained_model = None
+        self.df = self.load_data()
 
     def load_data(self) -> pd.DataFrame:
         """Load into data"""
@@ -78,14 +79,6 @@ class StockBot:
         y = data['target']
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         return X_train, X_test, y_train, y_test
-
-    # @staticmethod
-    # def preprocess_data(X_train, X_test) -> tuple[pd.DataFrame, pd.DataFrame]:
-    #     """Perform PCA for dimensionality reduction of redundant features"""
-    #     scaler = StandardScaler()
-    #     X_train_standardized = scaler.fit_transform(X_train)
-    #     X_test_standardized = scaler.transform(X_test)
-    #     return X_train_standardized, X_test_standardized
     
     def train_model(self, X_train, y_train):
         # Create a pipeline with preprocessing and the model
@@ -97,14 +90,6 @@ class StockBot:
         )
         pipeline.fit(X_train, y_train)
         self.trained_model = pipeline
-
-    
-    # @staticmethod
-    # def perform_pca(X_train_standardized, X_test_standardized):
-    #     principle_components = PCA(n_components=10)
-    #     X_train_pca = principle_components.fit_transform(X_train_standardized)
-    #     X_test_pca = principle_components.transform(X_test_standardized)
-    #     return X_train_pca, X_test_pca
         
     @staticmethod
     def huber_loss(y_actual, y_predicted, delta: float):
@@ -118,7 +103,6 @@ class StockBot:
             'n_estimators': [50, 100, 150],
             'learning_rate': [0.1, 0.01, 0.001]
         }
-        # pipeline = make_pipeline(GradientBoostingRegressor(), memory="cachedir")
 
         # Perform grid search with cross-validation
         searched_model = GridSearchCV(self.trained_model, param_grid, cv=5, scoring='neg_mean_squared_error')
