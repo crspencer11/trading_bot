@@ -22,7 +22,6 @@ class StockBot:
         self.company = company
         self.features = ['open', 'high', 'low', 'volume', 'RSI', 'MACD']
         self.trained_model = None
-        self.df = self.load_data()
 
     def load_data(self) -> pd.DataFrame:
         """Load into data"""
@@ -34,7 +33,7 @@ class StockBot:
             )
         return self.df
     
-    def calculate_moving_avgs(self, data) -> pd.DataFrame:
+    def calculate_moving_avgs(self, data: pd.DataFrame) -> pd.DataFrame:
         """MACD indicator creation"""
         data['ShortEMA'] = data['Close'].ewm(span=12, adjust=False).mean()
         data['LongEMA'] = data['Close'].ewm(span=26, adjust=False).mean()
@@ -46,7 +45,7 @@ class StockBot:
         )
         return data
     
-    def relative_strength_index(self, data) -> pd.DataFrame:
+    def relative_strength_index(self, data: pd.DataFrame) -> pd.DataFrame:
         """RSI indicator creation"""
         delta = data['Close'].diff(1)
 
@@ -69,7 +68,7 @@ class StockBot:
         )
         return data
     
-    def split_data(self, data) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    def split_data(self, data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         # create 20 day window for std of closing price and use as y(prediction) value
         rolling_std = data['close'].pct_change().rolling(window=20).std()
         data['target'] = (rolling_std.shift(-1) > rolling_std).astype(int)
