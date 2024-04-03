@@ -27,13 +27,15 @@ class StockBot:
 
     def load_data(self) -> pd.DataFrame:
         """Load into data"""
-        if self.df is None:
+        try:
             # API call HERE!!!!!
             self.df = pd.DataFrame.from_dict()
             self.audit_trail.append(
                 f"Initialized dataframe:{self.df.head()}"
             )
-        return self.df
+            return self.df
+        except Exception as e:
+            self.audit_trail.append(f"An error occurred with load_data: {e}")
     
     def calculate_moving_avgs(self, data: pd.DataFrame) -> pd.DataFrame:
         """MACD indicator creation"""
@@ -141,16 +143,23 @@ class StockBot:
 
     def launch_bot(self):
         """Implement the execution of statistical calculations to be done concurrently"""
+        audit_trail = []
         stock_data = self.load_data()
+
         with ThreadPoolExecutor() as executor:
             # Execute calculate_moving_avgs and relative_strength_index concurrently
             future1 = executor.submit(self.calculate_moving_avgs, stock_data.copy())
             future2 = executor.submit(self.relative_strength_index, stock_data.copy())
+            #write to audit trail
+            audit_trail.append(future1.result())
+            audit_trail.append(future2.result())
             # wait for completion
             final_df = future1.result()
             final_df = future2.result()
+
         X_train, X_test, y_train, y_test = self.split_data(final_df)
         # also has concurency implemented in the train_model method
         self.train_model(X_train, y_train)
         self.find_best_regressor(X_train, X_test, y_train, y_test)
+        return audit_trail
 
