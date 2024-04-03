@@ -11,6 +11,8 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+from concurrent.futures import ThreadPoolExecutor
+
 class StockBot:
     api_key = config.api_key
     base_url = "jasbndjkbnsdjbadjbaduij"
@@ -78,17 +80,25 @@ class StockBot:
         y = data['target']
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         return X_train, X_test, y_train, y_test
-    
+
     def train_model(self, X_train, y_train):
-        # Create a pipeline with preprocessing and the model
-        pipeline = make_pipeline(
-            StandardScaler(),
-            PCA(n_components=10),
-            GradientBoostingRegressor(),
-            memory="cachedir"
-        )
-        pipeline.fit(X_train, y_train)
-        self.trained_model = pipeline
+        # Define a function to train the model
+        def train():
+            # Create a pipeline with preprocessing and the model
+            pipeline = make_pipeline(
+                StandardScaler(),
+                PCA(n_components=10),
+                GradientBoostingRegressor(),
+                memory="cachedir"
+            )
+            pipeline.fit(X_train, y_train)
+            return pipeline
+
+        # Create a ThreadPoolExecutor
+        with ThreadPoolExecutor() as executor:
+            # Execute the training function concurrently
+            future = executor.submit(train)
+            self.trained_model = future.result()
         
     @staticmethod
     def huber_loss(y_actual, y_predicted, delta: float):
@@ -128,11 +138,19 @@ class StockBot:
         print("Feature Importances:")
         for feature, importance in zip(X_train.columns, feature_importances):
             print(f"{feature}: {importance:.4f}")
-            
+
     def launch_bot(self):
+        """Implement the execution of statistical calculations to be done concurrently"""
         stock_data = self.load_data()
-        df = self.calculate_moving_avgs(stock_data)
-        final_df = self.relative_strength_index(df)
+        with ThreadPoolExecutor() as executor:
+            # Execute calculate_moving_avgs and relative_strength_index concurrently
+            future1 = executor.submit(self.calculate_moving_avgs, stock_data.copy())
+            future2 = executor.submit(self.relative_strength_index, stock_data.copy())
+            # wait for completion
+            final_df = future1.result()
+            final_df = future2.result()
         X_train, X_test, y_train, y_test = self.split_data(final_df)
+        # also has concurency implemented in the train_model method
         self.train_model(X_train, y_train)
         self.find_best_regressor(X_train, X_test, y_train, y_test)
+
