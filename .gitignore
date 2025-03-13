@@ -6,3 +6,6 @@ __pycache__
 
 # ignore stored local cache files
 *.json
+
+# legacy ignores
+.ipynb_checkpoints/
