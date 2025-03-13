@@ -1,4 +1,8 @@
 config.json
 __pycache__
 
+# ignore env variables 
 *.env
+
+# ignore stored local cache files
+*.json
