@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 def main():
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")  # Define device
-
-    model = ModelLSTM(input_size=1, hidden_size=10, output_size=1).to(device)  # Use device 
+    # define device(MPS for apple M1 cpu otherwise) and subsequently use correct device
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = ModelLSTM(input_size=1, hidden_size=10, output_size=1).to(device)
 
     X_train = torch.tensor([[[0.1], [0.2], [0.3], [0.4], [0.5]]], dtype=torch.float32).to(device)
     y_train = torch.tensor([[0.6]], dtype=torch.float32).to(device)
