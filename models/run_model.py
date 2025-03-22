@@ -1,4 +1,4 @@
-from models.lstm import ModelLSTM
+import ModelLSTM
 import torch
 import torch.nn as nn
 import torch.optim as optim
