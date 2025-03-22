@@ -1,12 +1,17 @@
-def main():
-    
-    model = ModelLSTM(input_size=1, hidden_size=10, output_size=1).to(device)
+from models.lstm import ModelLSTM
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
-    # Create dummy data
+def main():
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")  # Define device
+
+    model = ModelLSTM(input_size=1, hidden_size=10, output_size=1).to(device)  # Use device 
+
     X_train = torch.tensor([[[0.1], [0.2], [0.3], [0.4], [0.5]]], dtype=torch.float32).to(device)
     y_train = torch.tensor([[0.6]], dtype=torch.float32).to(device)
 
-    # Define loss function, in this case mean standard error, and optimizer
+    # Define loss function and optimizer
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
