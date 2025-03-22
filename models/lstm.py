@@ -1,11 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-
-# Check for Metal Performance Shaders(MPS), ONLY for Apple Silicon machines
-# https://developer.apple.com/metal/pytorch/
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-print(f"Using device: {device}")
 
 class ModelLSTM(nn.Module):
     """
@@ -30,15 +24,17 @@ class ModelLSTM(nn.Module):
         >>> X_sample = torch.randn(1, 5, 1).to(device)  # (batch_size=1, sequence_length=5, features=1)
         >>> output = model(X_sample)
     """
+
     def __init__(self, input_size, hidden_size, output_size, num_layers=1):
         super(ModelLSTM, self).__init__()
+        self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        self.hidden_size = hidden_size  # Store hidden size
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        h0 = torch.zeros(1, x.size(0), 10, device=device)  # move to MPS
-        c0 = torch.zeros(1, x.size(0), 10, device=device)  # same
+        h0 = torch.zeros(1, x.size(0), self.hidden_size, device=self.device)  # Use self.hidden_size
+        c0 = torch.zeros(1, x.size(0), self.hidden_size, device=self.device)
         out, _ = self.lstm(x, (h0, c0))
         out = self.fc(out[:, -1, :])
         return out
-
