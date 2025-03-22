@@ -20,11 +20,12 @@ class CoinMarketData:
 
     def __init__(self, api_manager):
         self.api_manager = api_manager
+        self.data = None
 
     def get_data(self):
         cached_data = self.api_manager.cache_manager.load_cache()
         if cached_data:
-            return cached_data
+            self.data = cached_data
 
         self.api_manager.enforce_rate_limits()
         try:
@@ -32,15 +33,14 @@ class CoinMarketData:
             response.raise_for_status()
             data = response.json()["data"]
             self.api_manager.cache_manager.save_cache(data)
-            return data
+            self.data = data
         except requests.exceptions.RequestException as e:
             print(f"Error fetching data: {e}")
             return None
     
-    @staticmethod
-    def dataframe_transform(data):
+    def dataframe_transform(self):
         try:
-            return pd.DataFrame(data)
+            return pd.DataFrame(self.data)
         except Exception as e:
             print(f"Error transforming data to DataFrame: {e}")
             return None
