@@ -36,8 +36,9 @@ class CoinMarketData:
         except requests.exceptions.RequestException as e:
             print(f"Error fetching data: {e}")
             return None
-
-    def dataframe_transform(self, data):
+    
+    @staticmethod
+    def dataframe_transform(data):
         try:
             return pd.DataFrame(data)
         except Exception as e:
