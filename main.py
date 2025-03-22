@@ -9,7 +9,7 @@ def main():
     data = market_data.get_data()
     
     if data:
-        df = market_data.dataframe_transform(data)
+        df = dataframe_transform(data)
         if df is not None:
             print(df.head())
         else:
