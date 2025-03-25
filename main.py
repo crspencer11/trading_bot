@@ -34,7 +34,7 @@ def fetch_and_prepare_data():
                     X.append(prices[i:i+seq_length])
                     y.append(prices[i+seq_length])
 
-                return torch.tensor(X).unsqueeze(-1), torch.tensor(y).unsqueeze(-1)  # Shape: (samples, seq_length, 1)
+                return torch.tensor(X).unsqueeze(-1), torch.tensor(y).unsqueeze(-1)
             else:
                 print("Price column not found in data.")
                 return None, None
