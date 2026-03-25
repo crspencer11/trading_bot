@@ -3,6 +3,8 @@ import time
 import os
 import requests
 from handlers import *
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 class APIManager:
     """Tracks API request counts to enforce rate limits and monthly caps.
@@ -32,6 +34,19 @@ class APIManager:
             "Accepts": "application/json",
             "X-CMC_PRO_API_KEY": self.api_key,
         })
+
+        retry = Retry(
+            total=5,
+            connect=5,
+            read=5,
+            backoff_factor=0.5,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset(["GET", "POST"]),
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=10, pool_maxsize=10)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
         
         self.cache_manager = cache_manager or CacheManager()
         self.request_log = self.load_request_log()
@@ -51,8 +66,10 @@ class APIManager:
 
 
     def save_request_log(self, log):
-        with open(self.REQUEST_LOG, "w") as file:
+        tmp_path = f"{self.REQUEST_LOG}.tmp"
+        with open(tmp_path, "w") as file:
             json.dump(log, file)
+        os.replace(tmp_path, self.REQUEST_LOG)
 
     def enforce_rate_limits(self):
         log = self.load_request_log()

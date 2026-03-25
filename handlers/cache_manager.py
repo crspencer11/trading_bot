@@ -16,9 +16,23 @@ class CacheManager:
     CACHE_FILE = "crypto_cache.json"
     CACHE_EXPIRY = 60  # Cache expiry time in seconds
 
-    def load_cache(self):
-        if os.path.exists(self.CACHE_FILE) and os.path.getsize(self.CACHE_FILE) > 0:
-            with open(self.CACHE_FILE, "r") as file:
+    def __init__(self, cache_file: str | None = None, cache_expiry: int | None = None):
+        if cache_file is not None:
+            self.CACHE_FILE = cache_file
+        if cache_expiry is not None:
+            self.CACHE_EXPIRY = cache_expiry
+
+    def _get_cache_path(self, cache_key: str | None = None) -> str:
+        if not cache_key:
+            return self.CACHE_FILE
+        base, ext = os.path.splitext(self.CACHE_FILE)
+        safe_key = "".join(c if (c.isalnum() or c in "-_.") else "_" for c in cache_key)
+        return f"{base}.{safe_key}{ext or '.json'}"
+
+    def load_cache(self, cache_key: str | None = None):
+        cache_path = self._get_cache_path(cache_key)
+        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+            with open(cache_path, "r") as file:
                 cached_data = json.load(file)
                 time_since_cached = time.time() - cached_data["timestamp"]
                 if time_since_cached < self.CACHE_EXPIRY:
@@ -28,15 +42,9 @@ class CacheManager:
                     print(f"Cache expired: Data is {int(time_since_cached)}s old, fetching new data")
         return None
 
-    def save_cache(self, data):
-        with open(self.CACHE_FILE, "w") as f:
-            json.dump({"timestamp": time.time(), "data": data}, f)
-        print("Cache updated with new API data")
-        """Saves data to the cache with a timestamp.
-
-        Args:
-            data (dict): API response data to cache.
-        """
-        with open(self.CACHE_FILE, "w") as f:
+    def save_cache(self, data, cache_key: str | None = None):
+        """Saves data to the cache with a timestamp."""
+        cache_path = self._get_cache_path(cache_key)
+        with open(cache_path, "w") as f:
             json.dump({"timestamp": time.time(), "data": data}, f)
         print("Cache updated with new API data")

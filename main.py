@@ -15,16 +15,22 @@ def fetch_and_prepare_data():
     data = market_data.get_data()
     
     if data:
-        df = data.dataframe_transform()
+        df = market_data.dataframe_transform()
         if df is not None:
             print("Data Sample:\n", df.head())
             
             # Assuming price column exists for time-series prediction
             if 'price' in df.columns:
-                prices = df['price'].values.astype(np.float32)
+                prices = df['price'].dropna().values.astype(np.float32)
+                if len(prices) < 10:
+                    print("Not enough price points to train.")
+                    return None, None
                 
                 # Normalize data (optional)
                 min_price, max_price = prices.min(), prices.max()
+                if max_price == min_price:
+                    print("Price series is constant; cannot normalize/train.")
+                    return None, None
                 prices = (prices - min_price) / (max_price - min_price)
 
                 # Create sequences for LSTM
