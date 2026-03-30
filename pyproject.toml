@@ -1,21 +1,23 @@
 [project]
 name = "trading-bot"
 version = "0.1.0"
-description = "Toy trading bot / research sandbox"
+description = "Trading bot research sandbox with reproducible tooling"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "numpy",
-  "pandas",
-  "python-dotenv",
-  "requests",
-  "torch",
+  "numpy>=2.1",
+  "pandas>=2.2",
+  "python-dotenv>=1.0",
+  "requests>=2.32",
+  "torch>=2.8",
 ]
 
 [dependency-groups]
 dev = [
-  "pytest",
-  "ruff",
+  "mypy>=1.11",
+  "pre-commit>=3.8",
+  "pytest>=8.3",
+  "ruff>=0.12",
 ]
 
 [tool.ruff]
@@ -28,4 +30,11 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
 
