@@ -1,0 +1,18 @@
+risk:
+  max_position_pct: 0.10
+  stop_loss_pct: 0.03
+  take_profit_pct: 0.06
+  volatility_target: 0.15
+
+data:
+  symbols:
+    - BTC
+    - ETH
+  timeframe: "1h"
+  lookback_bars: 2000
+
+training:
+  seq_length: 32
+  train_split: 0.7
+  val_split: 0.15
+  epochs: 50
