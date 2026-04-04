@@ -46,7 +46,7 @@ def test_dataframe_transform_extracts_price():
     }
     api = _FakeAPIManager(payload)
     md = CoinMarketData(api)
-    assert md.get_data() is not None
+    assert md.get_live_data() is not None
     df = md.dataframe_transform()
     assert df is not None
     assert "price" in df.columns
