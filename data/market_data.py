@@ -1,7 +1,7 @@
 import requests
 import os
 import pandas as pd
-from handlers import *
+from handlers import APIManager
 
 class CoinMarketData:
     """Fetches and processes cryptocurrency data from the CoinMarketCap API.
@@ -25,11 +25,11 @@ class CoinMarketData:
         "convert": os.getenv("CMC_CONVERT", "USD"),
     }
 
-    def __init__(self, api_manager):
+    def __init__(self, api_manager: APIManager):
         self.api_manager = api_manager
         self.data = None
 
-    def get_data(self):
+    def get_live_data(self):
         cache_key = "cmc.listings.latest"
         cached_data = self.api_manager.cache_manager.load_cache(cache_key=cache_key)
         if cached_data:

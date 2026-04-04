@@ -2,7 +2,7 @@ import json
 import time
 import os
 import requests
-from handlers import *
+from handlers.cache_manager import CacheManager
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
