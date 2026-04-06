@@ -3,7 +3,7 @@ name = "trading-bot"
 version = "0.1.0"
 description = "Trading bot research sandbox with reproducible tooling"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 dependencies = [
   "numpy>=2.1",
   "pandas>=2.2",
