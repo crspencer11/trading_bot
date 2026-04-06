@@ -1,1 +1,1 @@
-from .market_data import CoinMarketData
+from .market_data import __all__
