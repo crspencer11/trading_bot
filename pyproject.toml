@@ -11,6 +11,7 @@ dependencies = [
   "requests>=2.32",
   "torch>=2.8",
 ]
+package-mode = false
 
 [dependency-groups]
 dev = [
