@@ -21,7 +21,7 @@ jobs:
           poetry install --no-interaction --no-root
       - name: Lint
         run: |
-          bash scripts/run_lint.sh
+          poetry run bash scripts/run_lint.sh
       - name: Tests
         run: poetry run pytest -q
 
