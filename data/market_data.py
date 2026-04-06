@@ -1,7 +1,10 @@
-import requests
 import os
+
 import pandas as pd
+import requests
+
 from handlers import APIManager
+
 
 class CoinMarketData:
     """Fetches and processes cryptocurrency data from the CoinMarketCap API.
@@ -47,7 +50,7 @@ class CoinMarketData:
         except requests.exceptions.RequestException as e:
             print(f"Error fetching data: {e}")
             return None
-    
+
     def dataframe_transform(self):
         try:
             if self.data is None:
@@ -58,9 +61,7 @@ class CoinMarketData:
             convert = str(self.parameters.get("convert", "USD"))
             quote_col = "quote"
             if quote_col in df.columns:
-                df["price"] = df[quote_col].apply(
-                    lambda q: (q or {}).get(convert, {}).get("price")
-                )
+                df["price"] = df[quote_col].apply(lambda q: (q or {}).get(convert, {}).get("price"))
             return df
         except Exception as e:
             print(f"Error transforming data to DataFrame: {e}")

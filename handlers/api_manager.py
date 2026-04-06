@@ -1,10 +1,13 @@
 import json
-import time
 import os
+import time
+
 import requests
-from handlers.cache_manager import CacheManager
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from handlers.cache_manager import CacheManager
+
 
 class APIManager:
     """Tracks API request counts to enforce rate limits and monthly caps.
@@ -28,12 +31,14 @@ class APIManager:
         self.api_key = os.getenv("API_KEY")
         if not self.api_key:
             raise ValueError("API key not found. Please set the API_KEY environment variable.")
-        
+
         self.session = requests.Session()
-        self.session.headers.update({
-            "Accepts": "application/json",
-            "X-CMC_PRO_API_KEY": self.api_key,
-        })
+        self.session.headers.update(
+            {
+                "Accepts": "application/json",
+                "X-CMC_PRO_API_KEY": self.api_key,
+            }
+        )
 
         retry = Retry(
             total=5,
@@ -47,13 +52,13 @@ class APIManager:
         adapter = HTTPAdapter(max_retries=retry, pool_connections=10, pool_maxsize=10)
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
-        
+
         self.cache_manager = cache_manager or CacheManager()
         self.request_log = self.load_request_log()
 
     def load_request_log(self):
         if os.path.exists(self.REQUEST_LOG):
-            with open(self.REQUEST_LOG, "r") as file:
+            with open(self.REQUEST_LOG) as file:
                 try:
                     log = json.load(file)
                     if not isinstance(log, dict):
@@ -64,7 +69,6 @@ class APIManager:
             log = {"timestamps": [], "monthly_count": 0}
         return log
 
-
     def save_request_log(self, log):
         tmp_path = f"{self.REQUEST_LOG}.tmp"
         with open(tmp_path, "w") as file:
@@ -74,7 +78,9 @@ class APIManager:
     def enforce_rate_limits(self):
         log = self.load_request_log()
         current_time = time.time()
-        log["timestamps"] = [t for t in log["timestamps"] if current_time - t < self.RATE_LIMIT_INTERVAL]
+        log["timestamps"] = [
+            t for t in log["timestamps"] if current_time - t < self.RATE_LIMIT_INTERVAL
+        ]
 
         if len(log["timestamps"]) >= self.RATE_LIMIT:
             sleep_time = self.RATE_LIMIT_INTERVAL - (current_time - log["timestamps"][0])

@@ -2,6 +2,7 @@ import json
 import os
 import time
 
+
 class CacheManager:
     """Handles caching of API responses to reduce redundant API calls.
 
@@ -32,14 +33,16 @@ class CacheManager:
     def load_cache(self, cache_key: str | None = None):
         cache_path = self._get_cache_path(cache_key)
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
-            with open(cache_path, "r") as file:
+            with open(cache_path) as file:
                 cached_data = json.load(file)
                 time_since_cached = time.time() - cached_data["timestamp"]
                 if time_since_cached < self.CACHE_EXPIRY:
                     print(f"Cache hit: Using cached data (Age: {int(time_since_cached)}s)")
                     return cached_data["data"]
                 else:
-                    print(f"Cache expired: Data is {int(time_since_cached)}s old, fetching new data")
+                    print(
+                        f"Cache expired: Data is {int(time_since_cached)}s old, fetching new data"
+                    )
         return None
 
     def save_cache(self, data, cache_key: str | None = None):

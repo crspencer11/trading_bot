@@ -21,7 +21,8 @@ jobs:
           poetry install --no-interaction --no-root
       - name: Lint
         run: |
-          poetry run bash scripts/run_lint.sh
+          poetry run ruff check .
+          poetry run ruff format --check .
       - name: Tests
         run: poetry run pytest -q
 

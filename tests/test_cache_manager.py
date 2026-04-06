@@ -28,4 +28,3 @@ def test_cache_key_separates_files(tmp_path):
     cache.save_cache({"x": 2}, cache_key="b")
     assert cache.load_cache(cache_key="a") == {"x": 1}
     assert cache.load_cache(cache_key="b") == {"x": 2}
-

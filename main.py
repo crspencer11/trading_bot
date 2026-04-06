@@ -4,10 +4,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from dotenv import load_dotenv
+
 from data import CoinMarketData
 from handlers import APIManager, CacheManager
 from models import ModelLSTM
-from dotenv import load_dotenv
 
 
 def fetch_and_prepare_data(seq_length: int):
@@ -52,6 +53,7 @@ def fetch_and_prepare_data(seq_length: int):
         print("No data retrieved.")
         return None, None
 
+
 def train_model(X_train, y_train):
     """Train an LSTM model using prepared market data."""
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -68,7 +70,7 @@ def train_model(X_train, y_train):
         loss = criterion(output, y_train)
         loss.backward()
         optimizer.step()
-        
+
         if epoch % 10 == 0:
             print(f"Epoch {epoch}, Loss: {loss.item()}")
 
@@ -76,7 +78,9 @@ def train_model(X_train, y_train):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run baseline LSTM training on live market listing data.")
+    parser = argparse.ArgumentParser(
+        description="Run baseline LSTM training on live market listing data."
+    )
     parser.add_argument("--seq-length", type=int, default=5, help="Input sequence length")
     args = parser.parse_args()
 

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class ModelLSTM(nn.Module):
     """
     A simple LSTM-based neural network for sequence modeling.
@@ -26,7 +27,7 @@ class ModelLSTM(nn.Module):
     """
 
     def __init__(self, input_size, hidden_size, output_size, num_layers=1):
-        super(ModelLSTM, self).__init__()
+        super().__init__()
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         self.hidden_size = hidden_size
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)

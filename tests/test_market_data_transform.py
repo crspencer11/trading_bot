@@ -51,4 +51,3 @@ def test_dataframe_transform_extracts_price():
     assert df is not None
     assert "price" in df.columns
     assert float(df.loc[0, "price"]) == 123.45
-
